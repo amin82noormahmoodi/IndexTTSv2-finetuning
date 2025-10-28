@@ -1,0 +1,233 @@
+# German-specific configuration for IndexTTS2 fine-tuning
+dataset:
+    bpe_model: german_bpe.model
+    sample_rate: 24000
+    squeeze: false
+    mel:
+        sample_rate: 24000
+        n_fft: 1024
+        hop_length: 256
+        win_length: 1024
+        n_mels: 100
+        mel_fmin: 0
+        normalize: false
+
+gpt:
+    model_dim: 1280
+    max_mel_tokens: 1815
+    max_text_tokens: 600
+    heads: 20
+    use_mel_codes_as_input: true
+    mel_length_compression: 1024
+    layers: 24
+    number_text_tokens: 16000  # German vocabulary size
+    number_mel_codes: 8194
+    start_mel_token: 8192
+    stop_mel_token: 8193
+    start_text_token: 0
+    stop_text_token: 1
+    train_solo_embeddings: false
+    condition_type: "conformer_perceiver"
+    condition_module:
+        output_size: 512
+        linear_units: 2048
+        attention_heads: 8
+        num_blocks: 6
+        input_layer: "conv2d2"
+        perceiver_mult: 2
+    emo_condition_module:
+        output_size: 512
+        linear_units: 1024
+        attention_heads: 4
+        num_blocks: 4
+        input_layer: "conv2d2"
+        perceiver_mult: 2
+
+# LoRA configuration
+lora:
+    enabled: true
+    rank: 16
+    alpha: 16.0
+    dropout: 0.0
+    target_modules:
+        - "gpt.h.*.attn.c_attn"
+        - "gpt.h.*.attn.c_proj"
+        - "gpt.h.*.mlp.c_fc"
+        - "gpt.h.*.mlp.c_proj"
+
+# Training configuration
+training:
+    num_epochs: 10
+    batch_size: 4
+    learning_rate: 1e-4
+    warmup_steps: 1000
+    gradient_clip_val: 1.0
+    save_every: 1000
+    log_every: 100
+    weight_decay: 0.01
+    
+    # Data augmentation
+    augmentation:
+        speed_perturbation: true
+        pitch_perturbation: true
+        noise_injection: true
+        time_stretching: true
+    
+    # Regularization
+    regularization:
+        dropout: 0.1
+        label_smoothing: 0.1
+        early_stopping_patience: 5
+
+# German-specific text processing
+german_text:
+    normalize_umlauts: false  # Keep umlauts for proper pronunciation
+    expand_contractions: true
+    expand_abbreviations: true
+    normalize_numbers: true
+    normalize_punctuation: true
+    
+    # German-specific rules
+    contractions:
+        "am": "an dem"
+        "ans": "an das"
+        "aufs": "auf das"
+        "beim": "bei dem"
+        "durchs": "durch das"
+        "fürs": "für das"
+        "hinterm": "hinter dem"
+        "hinters": "hinter das"
+        "ins": "in das"
+        "im": "in dem"
+        "überm": "über dem"
+        "übers": "über das"
+        "ums": "um das"
+        "unterm": "unter dem"
+        "unters": "unter das"
+        "vom": "von dem"
+        "vors": "vor das"
+        "vorm": "vor dem"
+        "zur": "zu der"
+        "zum": "zu dem"
+    
+    abbreviations:
+        "z.B.": "zum Beispiel"
+        "bzw.": "beziehungsweise"
+        "usw.": "und so weiter"
+        "etc.": "et cetera"
+        "ca.": "circa"
+        "d.h.": "das heißt"
+        "Prof.": "Professor"
+        "Dr.": "Doktor"
+
+# Evaluation configuration
+evaluation:
+    metrics:
+        - "cer"  # Character Error Rate
+        - "wer"  # Word Error Rate
+        - "mos"  # Mean Opinion Score
+        - "speaker_similarity"
+        - "emotion_accuracy"
+        - "duration_accuracy"
+    
+    test_sets:
+        - "in_domain"
+        - "out_of_domain"
+        - "emotional"
+        - "long_utterances"
+    
+    # German-specific evaluation
+    german_evaluation:
+        phoneme_accuracy: true
+        stress_accuracy: true
+        rhythm_accuracy: true
+        intonation_accuracy: true
+
+# Model paths
+model_paths:
+    pretrained_model: "checkpoints/gpt.pth"
+    german_vocab: "german_bpe.model"
+    speaker_encoder: "checkpoints/spk_matrix.pt"
+    emotion_encoder: "checkpoints/emo_matrix.pt"
+    vocoder: "nvidia/bigvgan_v2_22khz_80band_256x"
+
+# Output configuration
+output:
+    checkpoint_dir: "checkpoints/german"
+    log_dir: "logs/german"
+    sample_dir: "samples/german"
+    tensorboard_dir: "runs/german"
+    
+    # Checkpoint saving
+    save_best: true
+    save_last: true
+    save_every_n_epochs: 1
+    
+    # Sample generation
+    generate_samples_every: 1000
+    num_samples: 5
+    sample_texts:
+        - "Hallo, wie geht es Ihnen heute?"
+        - "Das Wetter ist heute sehr schön."
+        - "Ich freue mich, Sie kennenzulernen."
+        - "Können Sie mir bitte helfen?"
+        - "Vielen Dank für Ihre Hilfe."
+
+# Hardware configuration
+hardware:
+    device: "cuda"
+    num_workers: 4
+    pin_memory: true
+    mixed_precision: true
+    gradient_checkpointing: true
+    
+    # Memory optimization
+    memory_efficient_attention: true
+    activation_checkpointing: true
+    gradient_accumulation_steps: 1
+
+# Logging configuration
+logging:
+    level: "INFO"
+    log_to_file: true
+    log_to_console: true
+    log_to_wandb: false
+    
+    # Wandb configuration
+    wandb:
+        project: "indextts2-german"
+        entity: null
+        tags: ["german", "tts", "finetuning"]
+        notes: "German fine-tuning for IndexTTS2"
+
+# Data configuration
+data:
+    train_split: 0.8
+    val_split: 0.1
+    test_split: 0.1
+    
+    # Data filtering
+    min_duration: 1.0  # seconds
+    max_duration: 10.0  # seconds
+    min_text_length: 10  # characters
+    max_text_length: 200  # characters
+    
+    # Data augmentation
+    augmentation_prob: 0.5
+    speed_range: [0.9, 1.1]
+    pitch_range: [-0.1, 0.1]  # semitones
+    noise_level: 0.01
+
+# German-specific phoneme configuration
+phonemes:
+    # German phoneme set (IPA)
+    vowels: ["a", "a:", "e", "e:", "i", "i:", "o", "o:", "u", "u:", "y", "y:", "ø", "ø:", "œ", "œ:", "ə", "ɐ"]
+    consonants: ["p", "b", "t", "d", "k", "g", "f", "v", "s", "z", "ʃ", "ʒ", "ç", "x", "h", "m", "n", "ŋ", "l", "r", "ʁ", "j", "w"]
+    diphthongs: ["aɪ", "aʊ", "ɔɪ"]
+    
+    # Stress patterns
+    stress_patterns: ["ˈ", "ˌ", ""]  # Primary, secondary, unstressed
+    
+    # Syllable structure
+    max_syllables_per_word: 8
+    max_phonemes_per_syllable: 6
