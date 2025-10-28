@@ -111,7 +111,7 @@ class GermanTextNormalizer:
         text = re.sub(r'\s+', ' ', text)
         # Normalize quotes
         text = re.sub(r'[""„"]', '"', text)
-        text = re.sub(r'[''‚']', "'", text)
+        text = re.sub(r'[""‚"]', "'", text)
         # Normalize dashes
         text = re.sub(r'[–—]', '-', text)
         return text.strip()
